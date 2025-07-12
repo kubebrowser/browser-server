@@ -30,6 +30,8 @@ COPY ./startup.sh  ./
 
 RUN chmod +x startup.sh
 
+USER 1001
+
 CMD ["/app/startup.sh"]
 
 EXPOSE 5900
