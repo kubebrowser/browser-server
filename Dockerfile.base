@@ -1,0 +1,3 @@
+FROM fedora
+
+RUN dnf install -y chromium-browser nodejs sqlite sqlite-devel xorg-x11-server-Xvfb x11vnc 
