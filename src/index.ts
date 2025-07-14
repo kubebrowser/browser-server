@@ -1,7 +1,7 @@
 // @ts-ignore
 import Xvfb from "xvfb";
 import { checkEvironment, getEnv, parseIntorFail } from "./utils";
-import { runBrowserAndWS } from "./browser";
+import { runBrowserAndServer } from "./browser";
 
 async function main() {
   checkEvironment();
@@ -34,7 +34,11 @@ async function main() {
   const xvfbProcess = xvfb.startSync();
   console.log("started xvfb process: " + xvfbProcess.pid);
   try {
-    await runBrowserAndWS(browserWidth, browserHeight);
+    await runBrowserAndServer(
+      browserWidth,
+      browserHeight,
+      getEnv("MODE", "http") as "http" | "websockets"
+    );
   } catch (err) {
     console.log(err);
     xvfb.stopSync();

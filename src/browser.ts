@@ -2,10 +2,14 @@ import puppeteer from "puppeteer-core";
 import { Server } from "socket.io";
 import { browserAction, userAction } from "./types";
 import { getEnv, parseIntorFail } from "./utils";
+import express, { json } from "express";
+import Joi from "joi";
+import cors from "cors";
 
-export async function runBrowserAndWS(
+export async function runBrowserAndServer(
   browserWidth: number,
-  browserHeight: number
+  browserHeight: number,
+  mode: "http" | "websockets"
 ) {
   const browser = await puppeteer.launch({
     headless: false,
@@ -25,47 +29,116 @@ export async function runBrowserAndWS(
   const pages = await browser.pages();
   const page = pages[0];
 
-  const io = new Server({
-    cors: { origin: getEnv("ALLOWED_CORS_ORIGINS", "*") },
-  });
+  const port = parseIntorFail(getEnv("PORT", "3000"), "PORT");
 
-  const wsPort = parseIntorFail(getEnv("WS_PORT", "3000"), "WS_PORT");
-  io.listen(wsPort);
-  console.log("io server listening on port " + wsPort);
+  if (mode === "websockets") {
+    const io = new Server({
+      cors: { origin: getEnv("ALLOWED_CORS_ORIGINS", "*") },
+    });
 
-  io.on("connection", (socket) => {
-    console.log("socket connection " + socket.id);
+    io.on("connection", (socket) => {
+      console.log("socket connection " + socket.id);
 
-    socket.on("userAction", (arg: userAction["action"]) => {
-      console.log("user action", arg);
-      switch (arg?.kind) {
-        case "page-reload":
-          page.reload();
-          break;
-        case "page-navigation":
-          page.goto(arg.url);
-          break;
-        case "page-back":
-          page.goBack();
-          break;
-        case "page-forward":
-          page.goForward();
-          break;
-        default:
-          console.log("Unhandled user action " + arg);
+      socket.on("ping", () => {
+        socket.emit("pong");
+      });
+
+      socket.on("userAction", (arg: userAction["action"]) => {
+        console.log("user action", arg);
+        switch (arg?.kind) {
+          case "page-reload":
+            page.reload();
+            break;
+          case "page-navigate":
+            page.goto(arg.url);
+            break;
+          case "page-goback":
+            page.goBack();
+            break;
+          case "page-goforward":
+            page.goForward();
+            break;
+          default:
+            console.log("Unhandled user action " + arg);
+        }
+      });
+
+      page.on("framenavigated", () => {
+        const action: browserAction = {
+          kind: "browserAction",
+          action: { kind: "page-navigate", url: page.url() },
+        };
+
+        io.emit(action.kind, action);
+        console.log("frame navigated..");
+      });
+    });
+
+    io.listen(port);
+    console.log(`IO Server on port ${port} [mode=${mode}]`);
+  } else {
+    const app = express();
+
+    app.get("/", (req, res) => {
+      res.sendStatus(200);
+    });
+
+    app.get("/healthz", (req, res) => {
+      res.send("OK");
+    });
+
+    app.post(
+      "/action",
+      cors({ origin: getEnv("ALLOWED_CORS_ORIGINS", "*") }),
+      json(),
+      async (req, res) => {
+        const schema = Joi.object<userAction["action"]>({
+          kind: Joi.string()
+            .required()
+            .valid(
+              "page-reload",
+              "page-navigate",
+              "page-goback",
+              "page-goforward"
+            ),
+          url: Joi.string().uri().when("kind", {
+            is: "page-navigate",
+            then: Joi.required(),
+            otherwise: Joi.forbidden(),
+          }),
+        }).required();
+
+        const { error, value: fields } = schema.validate(req.body);
+        if (error) {
+          return res.status(400).json({ success: false, error: error });
+        }
+
+        switch (fields.kind) {
+          case "page-reload":
+            page.reload();
+            res.sendStatus(202);
+            return;
+          case "page-navigate":
+            page.goto(fields.url);
+            return;
+          case "page-goback":
+            res.sendStatus(202);
+            page.goBack();
+            return;
+          case "page-goforward":
+            page.goForward();
+            res.sendStatus(202);
+            return;
+          default:
+            console.log("Unhandled user action " + fields);
+            res.sendStatus(500);
+        }
       }
-    });
+    );
 
-    page.on("framenavigated", () => {
-      const action: browserAction = {
-        kind: "browserAction",
-        action: { kind: "page-navigation", url: page.url() },
-      };
-
-      io.emit(action.kind, action);
-      console.log("frame navigated..");
-    });
-  });
+    app.listen(port);
+    console.log(`Server listening on port ${port} [mode=${mode}]`);
+  }
 
   page.on("close", () => {
     console.log("page closed");

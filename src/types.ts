@@ -2,29 +2,29 @@ type pageReloadAction = {
   kind: "page-reload";
 };
 
-type pageNavigationAction = {
-  kind: "page-navigation";
+type pageNavigateAction = {
+  kind: "page-navigate";
   url: string;
 };
 
-type pageBackAction = {
-  kind: "page-back";
+type pageGoBackAction = {
+  kind: "page-goback";
 };
 
-type pageForwardAction = {
-  kind: "page-forward";
+type pageGoForwardAction = {
+  kind: "page-goforward";
 };
 
 export type browserAction = {
   kind: "browserAction";
-  action: pageNavigationAction;
+  action: pageNavigateAction;
 };
 
 export type userAction = {
   kind: "userAction";
   action:
     | pageReloadAction
-    | pageNavigationAction
-    | pageBackAction
-    | pageForwardAction;
+    | pageNavigateAction
+    | pageGoBackAction
+    | pageGoForwardAction;
 };

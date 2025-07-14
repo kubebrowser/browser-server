@@ -1,3 +1,5 @@
+import { json } from "express";
+
 export function checkEvironment() {
   const requiredVars: string[] = [];
   for (const varName of requiredVars) {
@@ -7,12 +9,13 @@ export function checkEvironment() {
   }
 
   const optionalVars = [
-    "WS_PORT",
+    "PORT",
     "ALLOWED_CORS_ORIGINS",
     "BROWSER_WIDTH",
     "BROWSER_HEIGHT",
     "BROWSER_DEPTH",
     "BROWSER_EXECUTABLE_PATH",
+    "MODE",
   ];
   for (const varName of optionalVars) {
     if (process.env[varName]) continue;
@@ -29,4 +32,10 @@ export function parseIntorFail(string: string, valueName: string) {
   if (!isNaN(number)) return number;
   console.log(`ERROR '${valueName}' is not a valid number`);
   process.exit(1);
+}
+
+export function safeJson() {
+  try {
+    json();
+  } catch (err) {}
 }
