@@ -120,10 +120,11 @@ export async function runBrowserAndServer(
             return;
           case "page-navigate":
             page.goto(fields.url);
+            res.sendStatus(202);
             return;
           case "page-goback":
-            res.sendStatus(202);
             page.goBack();
+            res.sendStatus(202);
             return;
           case "page-goforward":
             page.goForward();
