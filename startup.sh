@@ -10,5 +10,4 @@ x11vnc -display :99 -forever -nopw  &
 # Wait for any process to exit
 wait -n
 
-# Exit with status of process that exited first
-exit $?
+exit 1

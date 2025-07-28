@@ -28,9 +28,15 @@ COPY --from=build /workdir/dist/* ./
 
 COPY ./startup.sh  ./
 
-RUN chmod +x startup.sh
+RUN chmod +x startup.sh && \
+    mkdir -p /tmp/.X11-unix && \
+    chown 0:0 /tmp/.X11-unix && \
+    chmod 1777 /tmp/.X11-unix
 
 USER 1001
+
+ENV XDG_CONFIG_HOME=/tmp
+ENV XDG_CACHE_HOME=/tmp
 
 CMD ["/app/startup.sh"]
 
