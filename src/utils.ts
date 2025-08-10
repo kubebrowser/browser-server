@@ -39,3 +39,19 @@ export function safeJson() {
     json();
   } catch (err) {}
 }
+
+export function getEmptyPageContent() {
+  return `<div style='position:absolute;top:0;bottom:0;left:0;right:0;margin:auto;display:flex;justify-content:center;align-items:center;flex-direction:column;row-gap:12px;'>
+      <p style='opacity: 0.8;font-size:25px;font-family:sans-serif;margin:0;'>Browser Ready</p>
+      <p style='opacity: 0.6;font-size:18px;font-family:sans-serif;margin:0;'>Start navigating by entering a url</p>
+    </div>
+`;
+}
+
+export function getNavigatingPageContent(url: string) {
+  return `<div style='position:absolute;top:0;bottom:0;left:0;right:0;margin:auto;display:flex;justify-content:center;align-items:center;flex-direction:column;row-gap:12px;'>
+      <p style='opacity: 0.8;font-size:25px;font-family:sans-serif;margin:0;'>Navigating...</p>
+      <p style='opacity: 0.6;font-size:18px;font-family:sans-serif;margin:0;'> => <code>${url}</code></p>
+    </div>
+`;
+}

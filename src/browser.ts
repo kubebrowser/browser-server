@@ -1,7 +1,12 @@
 import puppeteer from "puppeteer-core";
 import { Server } from "socket.io";
 import { browserAction, userAction } from "./types";
-import { getEnv, parseIntorFail } from "./utils";
+import {
+  getEnv,
+  parseIntorFail,
+  getEmptyPageContent,
+  getNavigatingPageContent,
+} from "./utils";
 import express, { json } from "express";
 import Joi from "joi";
 import cors from "cors";
@@ -28,6 +33,8 @@ export async function runBrowserAndServer(
 
   const pages = await browser.pages();
   const page = pages[0];
+
+  await page.setContent(getEmptyPageContent());
 
   const port = parseIntorFail(getEnv("PORT", "3000"), "PORT");
 
@@ -57,6 +64,11 @@ export async function runBrowserAndServer(
             break;
           case "page-goforward":
             page.goForward();
+            break;
+          case "page-reset":
+            page.goto("about:blank").then(() => {
+              page.setContent(getEmptyPageContent());
+            });
             break;
           default:
             console.log("Unhandled user action " + arg);
@@ -99,7 +111,8 @@ export async function runBrowserAndServer(
               "page-reload",
               "page-navigate",
               "page-goback",
-              "page-goforward"
+              "page-goforward",
+              "page-reset"
             ),
           url: Joi.string().uri().when("kind", {
             is: "page-navigate",
@@ -113,13 +126,17 @@ export async function runBrowserAndServer(
           return res.status(400).json({ success: false, error: error });
         }
 
+        console.log("user action", fields);
+
         switch (fields.kind) {
           case "page-reload":
             page.reload();
             res.sendStatus(202);
             return;
           case "page-navigate":
-            page.goto(fields.url);
+            page.setContent(getNavigatingPageContent(fields.url)).then(() => {
+              page.goto(fields.url);
+            });
             res.sendStatus(202);
             return;
           case "page-goback":
@@ -128,6 +145,12 @@ export async function runBrowserAndServer(
             return;
           case "page-goforward":
             page.goForward();
+            res.sendStatus(202);
+            return;
+          case "page-reset":
+            page.goto("about:blank").then(() => {
+              page.setContent(getEmptyPageContent());
+            });
             res.sendStatus(202);
             return;
           default:

@@ -15,6 +15,10 @@ type pageGoForwardAction = {
   kind: "page-goforward";
 };
 
+type pageResetAction = {
+  kind: "page-reset";
+};
+
 export type browserAction = {
   kind: "browserAction";
   action: pageNavigateAction;
@@ -26,5 +30,6 @@ export type userAction = {
     | pageReloadAction
     | pageNavigateAction
     | pageGoBackAction
-    | pageGoForwardAction;
+    | pageGoForwardAction
+    | pageResetAction;
 };
