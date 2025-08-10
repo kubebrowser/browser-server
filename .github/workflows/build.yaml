@@ -35,6 +35,7 @@ jobs:
         with:
           context: .
           push: true
+          file: Dockerfile.full
           tags: ghcr.io/kubebrowser/browser-server:${{ env.VERSION }}
 
       - name: Create GitHub Release
