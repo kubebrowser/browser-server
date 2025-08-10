@@ -1,4 +1,4 @@
-IMG ?= quay.io/mohamedf0/browser-server:latest
+IMG ?=  ghcr.io/kubebrowser/browser-server:latest
 
 docker-build:
 	docker build -f Dockerfile.full --platform linux/arm64,linux/amd64 -t ${IMG} .
