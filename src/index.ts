@@ -31,7 +31,7 @@ async function main() {
     reuse: true,
   });
 
-  if (process.env.ENVIRONMENT != "development") {
+  if (process.env.ENVIRONMENT !== "development") {
     const xvfbProcess = xvfb.startSync();
     console.log("started xvfb process: " + xvfbProcess.pid);
   } else {
