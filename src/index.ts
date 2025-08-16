@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-expect-error no types
 import Xvfb from "xvfb";
 import { checkEvironment, getEnv, parseIntorFail } from "./utils";
 import { runBrowserAndServer } from "./browser";
@@ -31,8 +31,13 @@ async function main() {
     reuse: true,
   });
 
-  const xvfbProcess = xvfb.startSync();
-  console.log("started xvfb process: " + xvfbProcess.pid);
+  if (process.env.ENVIRONMENT != "development") {
+    const xvfbProcess = xvfb.startSync();
+    console.log("started xvfb process: " + xvfbProcess.pid);
+  } else {
+    console.log("dev environment, skipping xvfb");
+  }
+
   try {
     await runBrowserAndServer(
       browserWidth,
@@ -41,7 +46,9 @@ async function main() {
     );
   } catch (err) {
     console.log(err);
-    xvfb.stopSync();
+    if (process.env.ENVIRONMENT !== "development") {
+      xvfb.stopSync();
+    }
   }
 }
 

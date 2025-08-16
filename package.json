@@ -1,13 +1,13 @@
 {
   "name": "browser-srv",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "npx eslint ./src/**",
     "lint:fix": "npx eslint ./src/** --fix",
     "build": "rm -rf dist && tsc",
-    "dev": "tsx src/index"
+    "dev": "ENVIRONMENT=development tsx src/index"
   },
   "keywords": [],
   "author": "",

@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer-core";
+import puppeteer, { LaunchOptions } from "puppeteer-core";
 import { Server } from "socket.io";
 import { browserAction, userAction } from "./types";
 import {
@@ -16,20 +16,28 @@ export async function runBrowserAndServer(
   browserHeight: number,
   mode: "http" | "websockets"
 ) {
-  const browser = await puppeteer.launch({
+  const launchOptions: LaunchOptions = {
     headless: false,
-    args: [
-      "--kiosk",
-      "--no-sandbox",
-      `--window-size=${browserWidth - 20},${browserHeight}`, // intentional -20 on width for scrollbar
-    ],
+    args: ["--no-sandbox", "--kiosk"],
     ignoreDefaultArgs: ["--enable-automation"],
     executablePath: getEnv(
       "BROWSER_EXECUTABLE_PATH",
       "/usr/bin/chromium-browser"
     ),
-    defaultViewport: { width: browserWidth - 20, height: browserHeight }, // intentional -20 on width for scrollbar
-  });
+  };
+
+  if (process.env.ENVIRONMENT !== "development") {
+    launchOptions.args ??= [];
+    launchOptions.args.push(
+      `--window-size=${browserWidth - 20},${browserHeight}` // intentional -20 on width for scrollbar
+    );
+    launchOptions.defaultViewport = {
+      width: browserWidth - 20,
+      height: browserHeight,
+    };
+  }
+
+  const browser = await puppeteer.launch(launchOptions);
 
   const pages = await browser.pages();
   const page = pages[0];
@@ -57,10 +65,18 @@ export async function runBrowserAndServer(
             page.reload();
             break;
           case "page-navigate":
-            page.goto(arg.url);
+            page.setContent(getNavigatingPageContent(arg.url)).then(() => {
+              page
+                .goto(arg.url)
+                .catch((err) => console.log("Failed to navigate to url", err));
+            });
             break;
           case "page-goback":
-            page.goBack();
+            page.goBack().then(() => {
+              if (page.url() === "about:blank") {
+                page.setContent(getEmptyPageContent());
+              }
+            });
             break;
           case "page-goforward":
             page.goForward();
@@ -135,12 +151,18 @@ export async function runBrowserAndServer(
             return;
           case "page-navigate":
             page.setContent(getNavigatingPageContent(fields.url)).then(() => {
-              page.goto(fields.url);
+              page
+                .goto(fields.url)
+                .catch((err) => console.log("Failed to navigate to url", err));
             });
             res.sendStatus(202);
             return;
           case "page-goback":
-            page.goBack();
+            page.goBack().then(() => {
+              if (page.url() === "about:blank") {
+                page.setContent(getEmptyPageContent());
+              }
+            });
             res.sendStatus(202);
             return;
           case "page-goforward":

@@ -37,7 +37,9 @@ export function parseIntorFail(string: string, valueName: string) {
 export function safeJson() {
   try {
     json();
-  } catch (err) {}
+  } catch (err) {
+    console.log(`failed to parse json: ${err}`);
+  }
 }
 
 export function getEmptyPageContent() {
